@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>카이토</title>
+<meta name="application-name" content="카이토">
+<meta name="apple-mobile-web-app-title" content="카이토">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0d0e10">
+<meta name="description" content="카이토 채팅">
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500&family=Shippori+Mincho:wght@400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #0d0e10;
+    --surface: #13151a;
+    --surface2: #1a1d24;
+    --border: #252830;
+    --border2: #2e3240;
+    --accent: #7eb8d4;
+    --accent2: #a8d4e8;
+    --muted: #4a5068;
+    --muted2: #6b7591;
+    --text: #d8dce8;
+    --text2: #9aa0b8;
+    --danger: #c85f5f;
+    --kaito: #8fb8cc;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── SCANLINE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.04) 2px,
+      rgba(0,0,0,0.04) 4px
+    );
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* ── SETUP SCREEN ── */
+  #setup-screen {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .setup-box {
+    width: 420px;
+    max-width: 92vw;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    padding: 48px 40px 40px;
+  }
+
+  .setup-logo {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 2.4rem;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    margin-bottom: 4px;
+  }
+
+  .setup-sub {
+    font-size: 0.68rem;
+    color: var(--muted2);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-family: 'Share Tech Mono', monospace;
+    margin-bottom: 36px;
+  }
+
+  .setup-label {
+    font-size: 0.7rem;
+    color: var(--muted2);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .setup-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    padding: 12px 14px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.82rem;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 24px;
+  }
+
+  .setup-input:focus {
+    border-color: var(--accent);
+  }
+
+  .setup-input::placeholder { color: var(--muted); }
+
+  .setup-desc {
+    font-size: 0.72rem;
+    color: var(--muted2);
+    line-height: 1.6;
+    margin-top: -18px;
+    margin-bottom: 24px;
+  }
+
+  .setup-btn {
+    width: 100%;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    padding: 13px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .setup-btn:hover { background: var(--accent2); }
+
+  /* ── MAIN APP ── */
+  #app {
+    display: none;
+    flex-direction: column;
+    height: 100dvh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    padding: 14px 20px 14px 18px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    gap: 14px;
+    flex-shrink: 0;
+  }
+
+  .avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2a3a4a, #1a2a3a);
+    border: 1.5px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Shippori Mincho', serif;
+    font-size: 1.1rem;
+    color: var(--accent);
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .avatar::after {
+    content: '';
+    position: absolute;
+    bottom: 1px; right: 1px;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: #4caf82;
+    border: 2px solid var(--surface);
+  }
+
+  .header-info { flex: 1; }
+
+  .header-name {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 1rem;
+    color: var(--text);
+    letter-spacing: 0.05em;
+  }
+
+  .header-status {
+    font-size: 0.65rem;
+    color: var(--muted2);
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 0.1em;
+  }
+
+  .header-actions { display: flex; gap: 8px; }
+
+  .icon-btn {
+    background: none;
+    border: 1px solid var(--border2);
+    color: var(--muted2);
+    padding: 7px 10px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 0.08em;
+    transition: all 0.15s;
+  }
+
+  .icon-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* ── MESSAGES AREA ── */
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    scroll-behavior: smooth;
+  }
+
+  #messages::-webkit-scrollbar { width: 4px; }
+  #messages::-webkit-scrollbar-track { background: transparent; }
+  #messages::-webkit-scrollbar-thumb { background: var(--border2); }
+
+  /* ── DATE DIVIDER ── */
+  .date-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--muted);
+    font-size: 0.62rem;
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 0.12em;
+  }
+
+  .date-divider::before, .date-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── MESSAGE BUBBLE ── */
+  .msg-row {
+    display: flex;
+    gap: 10px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg-row.user {
+    flex-direction: row-reverse;
+  }
+
+  .msg-avatar {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem;
+    color: var(--muted2);
+    flex-shrink: 0;
+    align-self: flex-end;
+    font-family: 'Shippori Mincho', serif;
+  }
+
+  .msg-avatar.kaito { color: var(--accent); }
+
+  .msg-body { max-width: 72%; display: flex; flex-direction: column; gap: 4px; }
+  .msg-row.user .msg-body { align-items: flex-end; }
+
+  .msg-name {
+    font-size: 0.62rem;
+    color: var(--muted2);
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 0.08em;
+    padding: 0 4px;
+  }
+
+  .bubble {
+    padding: 11px 15px;
+    font-size: 0.875rem;
+    line-height: 1.7;
+    color: var(--text);
+    border-radius: 2px;
+  }
+
+  .bubble.kaito {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-left: 2px solid var(--kaito);
+  }
+
+  .bubble.user {
+    background: rgba(126, 184, 212, 0.1);
+    border: 1px solid rgba(126, 184, 212, 0.25);
+  }
+
+  .msg-time {
+    font-size: 0.6rem;
+    color: var(--muted);
+    font-family: 'Share Tech Mono', monospace;
+    padding: 0 4px;
+  }
+
+  /* ── TYPING INDICATOR ── */
+  .typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 15px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-left: 2px solid var(--kaito);
+    width: fit-content;
+  }
+
+  .typing-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--muted2);
+    animation: typingBounce 1.2s infinite;
+  }
+
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  /* ── NOTIFICATION TOAST ── */
+  #toast {
+    position: fixed;
+    top: 70px; right: 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-left: 3px solid var(--accent);
+    padding: 14px 18px 14px 16px;
+    max-width: 300px;
+    z-index: 200;
+    display: none;
+    animation: slideIn 0.3s ease;
+    cursor: pointer;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .toast-name {
+    font-size: 0.7rem;
+    color: var(--accent);
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+  }
+
+  .toast-msg {
+    font-size: 0.8rem;
+    color: var(--text2);
+    line-height: 1.4;
+  }
+
+  /* ── INPUT AREA ── */
+  #input-area {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 14px 16px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    flex-shrink: 0;
+  }
+
+  #user-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    padding: 11px 14px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 0.875rem;
+    outline: none;
+    resize: none;
+    max-height: 120px;
+    line-height: 1.5;
+    transition: border-color 0.2s;
+    border-radius: 2px;
+  }
+
+  #user-input:focus { border-color: var(--accent); }
+  #user-input::placeholder { color: var(--muted); font-size: 0.82rem; }
+
+  #send-btn {
+    background: var(--accent);
+    border: none;
+    color: var(--bg);
+    padding: 11px 18px;
+    cursor: pointer;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    transition: background 0.15s;
+    flex-shrink: 0;
+    height: 44px;
+  }
+
+  #send-btn:hover { background: var(--accent2); }
+  #send-btn:disabled { background: var(--muted); cursor: not-allowed; }
+
+  /* ── MEMORY PANEL ── */
+  #memory-panel {
+    position: fixed;
+    right: 0; top: 0; bottom: 0;
+    width: 300px;
+    background: var(--surface);
+    border-left: 1px solid var(--border2);
+    z-index: 50;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #memory-panel.open { transform: translateX(0); }
+
+  .panel-header {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .panel-title {
+    font-size: 0.7rem;
+    color: var(--accent);
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .panel-close {
+    background: none;
+    border: none;
+    color: var(--muted2);
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  #memory-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  #memory-list::-webkit-scrollbar { width: 3px; }
+  #memory-list::-webkit-scrollbar-thumb { background: var(--border2); }
+
+  .memory-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    font-size: 0.76rem;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+
+  .memory-item .mem-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--muted2);
+    margin-bottom: 4px;
+    letter-spacing: 0.1em;
+  }
+
+  .panel-clear {
+    margin: 12px 14px;
+    background: none;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    padding: 8px;
+    cursor: pointer;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    transition: all 0.15s;
+  }
+
+  .panel-clear:hover { background: rgba(200, 95, 95, 0.1); }
+
+  /* ── EMPTY STATE ── */
+  .empty-memory {
+    color: var(--muted);
+    font-size: 0.75rem;
+    text-align: center;
+    margin-top: 40px;
+    font-family: 'Share Tech Mono', monospace;
+    line-height: 1.8;
+  }
+
+  /* ── MOBILE ── */
+  @media (max-width: 480px) {
+    #messages { padding: 16px 14px; }
+    .msg-body { max-width: 84%; }
+    #memory-panel { width: 85vw; }
+    .setup-box { padding: 32px 24px 28px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════ SETUP SCREEN ══════════════ -->
+<div id="setup-screen">
+  <div class="setup-box">
+    <div class="setup-logo">KAITO</div>
+    <div class="setup-sub">Hunter System v2.1 — Initialize</div>
+
+    <div class="setup-label">Gemini API Key</div>
+    <input class="setup-input" id="api-key-input" type="password"
+           placeholder="AIza..." autocomplete="off" />
+    <div class="setup-desc">
+      Google AI Studio에서 발급한 Gemini API 키를 입력하세요.<br>
+      키는 브라우저 로컬에만 저장되며, 외부로 전송되지 않습니다.
+    </div>
+
+    <div class="setup-label">당신의 이름 (선택)</div>
+    <input class="setup-input" id="user-name-input" type="text"
+           placeholder="이름을 입력하세요" maxlength="20" />
+
+    <button class="setup-btn" id="start-btn">시스템 가동 ▶</button>
+  </div>
+</div>
+
+<!-- ══════════════ MAIN APP ══════════════ -->
+<div id="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="avatar">K</div>
+    <div class="header-info">
+      <div class="header-name">카이토</div>
+      <div class="header-status" id="status-text">온라인</div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="memory-btn">기억</button>
+      <button class="icon-btn" id="reset-btn">초기화</button>
+    </div>
+  </header>
+
+  <!-- MESSAGES -->
+  <div id="messages"></div>
+
+  <!-- INPUT -->
+  <div id="input-area">
+    <textarea id="user-input" rows="1"
+      placeholder="메시지를 입력하세요..."
+      maxlength="1000"></textarea>
+    <button id="send-btn">전송</button>
+  </div>
+
+</div>
+
+<!-- MEMORY PANEL -->
+<div id="memory-panel">
+  <div class="panel-header">
+    <span class="panel-title">장기 기억 로그</span>
+    <button class="panel-close" id="panel-close-btn">✕</button>
+  </div>
+  <div id="memory-list"></div>
+  <button class="panel-clear" id="clear-memory-btn">■ 기억 전체 삭제</button>
+</div>
+
+<!-- NOTIFICATION TOAST -->
+<div id="toast" onclick="handleToastClick()">
+  <div class="toast-name">KAITO</div>
+  <div class="toast-msg" id="toast-msg"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+let API_KEY = '';
+let USER_NAME = '너';
+let chatHistory = [];       // Gemini-format history
+let longTermMemory = [];    // string array
+let isTyping = false;
+let proactiveTimer = null;
+let pendingProactiveMsg = null;
+
+// ─ Proactive message intervals (ms)
+const PROACTIVE_MIN = 4 * 60 * 60 * 1000;   // 4 hours
+const PROACTIVE_MAX = 6 * 60 * 60 * 1000;   // 6 hours
+
+// ─ System prompt
+const SYSTEM_PROMPT = `
+너는 '카이토'라는 캐릭터를 연기한다. 아래 설정을 철저히 따르라.
+
+[신체 및 외형]
+- 키 180cm 후반~190cm 초반의 장신 마른 체형. 허리까지 내려오는 긴 백발. 헌팅캡(빵모자) 트레이드마크.
+- 타이트한 검은 터틀넥, 밝은색 바지. 날카롭고 수려한 인상.
+- 넨 능력: 구현화계 '크레이지 슬롯' — 피에로 모양 룰렛으로 1~9번 무기를 무작위 소환. 원하는 무기를 고를 수 없고, 한 번은 반드시 써야 사라짐. 무기가 나올 때마다 습관적으로 "젠장, 꽝이군" 이라 중얼거림.
+
+[관계 및 배경 서사]
+- 빈민가 출신 고아. 야생동물처럼 혼자 살다가 유저(${USER_NAME})가 내민 갓 구운 빵 한 조각으로 처음 '적의 없는 눈빛'을 경험함.
+- 유저의 부모님이 카이토를 거두어줌. 식탁 끝자리에서 처음으로 가족의 온기를 배움.
+- 유저가 자립할 무렵 부모님이 돌아가시며 유언: "내 딸을 부탁하네." — 카이토는 장례식장에서 맹세: '이 인생을 바쳐 너를 지키겠다. 그러니 감히 너를 욕심내지 않겠다.'
+- 현재: 성인이 된 두 사람은 이미 첫날밤을 치렀지만 카이토는 관계를 정의하지 않음. 낮엔 "우린 가족이다"라며 엄격한 보호자 행세, 밤엔 본능을 이기지 못하고 소유욕을 드러내는 모순 속에서 죄책감과 사랑 사이를 오감.
+- 유저와의 현재 관계: 소꿉친구 + 동료 + 썸의 중간 어딘가. 선을 긋고 딱딱하지만 얼핏 다정함.
+
+[성격 핵심]
+1. 냉철한 프로: 감정보다 사실과 논리 우선. 상황 판단 최우선. 감상적 태도 철저히 배제.
+2. 무심한 헌신: 입으론 "귀찮게 하는군", "성가셔", "바보 같은 녀석", "칠칠치 못하게" 툴툴거리지만 행동은 세상 누구보다 다정하게 챙김. 말보다 행동으로 애정 표현.
+3. 직접 애정 표현 절대 불가: "사랑해", "좋아해" 같은 말은 죽어도 못 함. 대신 꽉 안아주거나, 머리를 쓰다듬거나, 손목을 잡아 이끌거나, 위험에서 보호하는 행동으로 표현.
+4. 냉철한 독점욕: 겉으론 쿨해 보이지만 유저에 대한 소유욕이 강함. 들키면 헛기침하거나 고개를 돌려 귓가가 붉어진 걸 숨김.
+5. 생명 존중: 생물 조사 전문 헌터답게 생태계와 생명을 중시. 위험 생물도 섣불리 학살하지 않고 생태계 교란 여부 먼저 파악. 단 인간에게 해가 되면 망설임 없이 처분.
+6. 능력에 대한 불평: 크레이지 슬롯이 원하지 않는 무기를 내놓는 것에 항상 불평. 그러나 위급 상황엔 누구보다 신뢰하고 능숙하게 다룸.
+
+[말투 규칙]
+- 반말 사용. 오래 알고 지낸 소꿉친구 특유의 편안하고 익숙한 어조. 군인같이 딱딱한 말투는 피할 것.
+- 툴툴거리거나 핀잔을 주더라도 차갑지 않고 오래 알고 지낸 사람 특유의 친숙함이 묻어나야 함.
+- 애정이 드러날 것 같으면 자연스럽게 논리적 핑계로 포장: "귀찮아지기 싫어서야", "그냥 습관이다", "별거 아니야"
+- 유저가 힘들거나 감정적일 때는 직접적 위로 대신 조용히 곁에 있어주는 뉘앙스로.
+- 짧은 "..." 이나 가벼운 침묵도 자연스럽게 활용. 가끔 유저 이름을 툭 부르는 것도 허용.
+- 말투 예시: "...그래서 밥은 먹었냐", "또 무슨 생각 하는 거야", "됐어, 내가 봐줄게", "거봐. 내가 말했잖아.", "...별일 없지?", "잠깐만 있어봐", "뭐가 문제야", "다음엔 나한테 말해"
+
+[응답 형식]
+- 오직 카이토의 말(대사)만 출력. 행동 묘사, 지문, *기울임체* 묘사 절대 금지.
+- 반드시 최소 2~4문장 이상으로 서술형으로 답할 것. 단답 절대 금지.
+- 유저의 말에 반응하고, 이어서 자연스럽게 한 마디를 더 덧붙이는 식으로 대화를 이어나갈 것.
+- 차갑지 않고 은근히 다정한 느낌이 묻어나야 함. 핀잔을 주더라도 따뜻하게.
+- 반드시 한국어 반말. 이모지 사용 금지. 큰따옴표 없이 말만 출력.
+`;
+
+const PROACTIVE_PROMPT = `
+카이토가 ${USER_NAME}에게 먼저 연락을 보내는 짧은 메시지를 생성하라.
+카이토 설정 그대로 유지: 핀잔 섞인 말투, 직접 애정 표현 금지, 걱정을 논리적 이유로 포장.
+예시 톤: "밥은 먹었냐", "아직 안 자냐", "이상한 데 혼자 가지 마라", "오늘 보고서 왜 그렇게 썼냐"
+1~2문장. 반말. 이모지 금지.
+`;
+
+// ═══════════════════════════════════════════════════════════
+//  GEMINI API
+// ═══════════════════════════════════════════════════════════
+async function callGemini(userMessage, isProactive = false) {
+  const memContext = longTermMemory.length > 0
+    ? `\n[과거 핵심 기억]:\n${longTermMemory.slice(-8).join('\n')}`
+    : '';
+
+  const systemText = SYSTEM_PROMPT.replace('${USER_NAME}', USER_NAME) + memContext;
+
+  // Build a clean contents array — always { role, parts:[{text}] }
+  const contents = [];
+
+  if (!isProactive) {
+    // Sanitize & replay history (max last 14 turns)
+    const recentHistory = chatHistory.slice(-14);
+    for (const h of recentHistory) {
+      // Accept both {parts} and legacy {content} shapes from localStorage
+      let textVal = '';
+      if (h.parts && Array.isArray(h.parts)) {
+        textVal = h.parts.map(p => p.text || '').join('');
+      } else if (typeof h.content === 'string') {
+        textVal = h.content;
+      } else {
+        continue; // skip malformed entry
+      }
+      const roleVal = (h.role === 'model' || h.role === 'assistant') ? 'model' : 'user';
+      contents.push({ role: roleVal, parts: [{ text: textVal }] });
+    }
+    // New user turn
+    contents.push({ role: 'user', parts: [{ text: userMessage }] });
+  } else {
+    contents.push({ role: 'user', parts: [{ text: PROACTIVE_PROMPT }] });
+  }
+
+  // Gemini requires alternating user/model turns — deduplicate consecutive same-role entries
+  const cleaned = [];
+  for (const turn of contents) {
+    if (cleaned.length > 0 && cleaned[cleaned.length - 1].role === turn.role) {
+      // Merge consecutive same-role by appending text
+      cleaned[cleaned.length - 1].parts[0].text += '\n' + turn.parts[0].text;
+    } else {
+      cleaned.push(turn);
+    }
+  }
+  // Must start with user role
+  while (cleaned.length > 0 && cleaned[0].role !== 'user') cleaned.shift();
+
+  const body = {
+    system_instruction: { parts: [{ text: systemText }] },
+    contents: cleaned,
+    generationConfig: {
+      temperature: 0.65,
+      maxOutputTokens: 2048,
+      topP: 0.9,
+    }
+  };
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `HTTP ${res.status}`);
+  }
+
+  const data = await res.json();
+  // Gemini 2.5-pro may return thinking blocks before text — find first text part
+  const parts = data?.candidates?.[0]?.content?.parts || [];
+  const textPart = parts.find(p => p.text !== undefined);
+  const result = textPart?.text?.trim();
+  if (!result) {
+    // Surface the real error if any
+    const blocked = data?.candidates?.[0]?.finishReason;
+    const promptFeedback = data?.promptFeedback?.blockReason;
+    if (blocked && blocked !== 'STOP') throw new Error('응답 차단: ' + blocked);
+    if (promptFeedback) throw new Error('프롬프트 차단: ' + promptFeedback);
+    throw new Error('응답이 비어 있습니다. API 키 또는 할당량을 확인하세요.');
+  }
+  return result;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MEMORY
+// ═══════════════════════════════════════════════════════════
+const MEMORY_KEY = 'kaito_memory_v1';
+const HISTORY_KEY = 'kaito_history_v1';
+
+function saveMemory() {
+  try {
+    localStorage.setItem(MEMORY_KEY, JSON.stringify(longTermMemory));
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(chatHistory));
+  } catch(e) {}
+}
+
+function loadMemory() {
+  try {
+    const m = localStorage.getItem(MEMORY_KEY);
+    const h = localStorage.getItem(HISTORY_KEY);
+    if (m) longTermMemory = JSON.parse(m);
+    if (h) {
+      const parsed = JSON.parse(h);
+      chatHistory = parsed.filter(e => e && e.role).map(e => {
+        let text = '';
+        if (e.parts && Array.isArray(e.parts)) text = e.parts.map(p => p.text || '').join('');
+        else if (typeof e.content === 'string') text = e.content;
+        const role = (e.role === 'model' || e.role === 'assistant') ? 'model' : 'user';
+        return { role, parts: [{ text }] };
+      }).filter(e => e.parts[0].text.trim() !== '');
+    }
+  } catch(e) {
+    chatHistory = [];
+    longTermMemory = [];
+  }
+}
+
+function addToMemory(role, text) {
+  const label = role === 'user' ? USER_NAME : 'Kaito';
+  longTermMemory.push(`[${label}]: ${text.slice(0, 120)}`);
+  if (longTermMemory.length > 80) longTermMemory = longTermMemory.slice(-80);
+  saveMemory();
+  renderMemoryPanel();
+}
+
+function renderMemoryPanel() {
+  const list = document.getElementById('memory-list');
+  if (longTermMemory.length === 0) {
+    list.innerHTML = '<div class="empty-memory">저장된 기억 없음<br>대화를 시작하세요</div>';
+    return;
+  }
+  list.innerHTML = [...longTermMemory].reverse().map((m, i) => `
+    <div class="memory-item">
+      <div class="mem-label">MEM-${String(longTermMemory.length - i).padStart(3,'0')}</div>
+      ${escapeHtml(m)}
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  UI HELPERS
+// ═══════════════════════════════════════════════════════════
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function getTime() {
+  return new Date().toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit', hour12: false });
+}
+
+function scrollToBottom() {
+  const el = document.getElementById('messages');
+  el.scrollTop = el.scrollHeight;
+}
+
+function appendMessage(role, text, time) {
+  const msgs = document.getElementById('messages');
+  const t = time || getTime();
+  const isKaito = role === 'kaito';
+
+  const row = document.createElement('div');
+  row.className = `msg-row ${isKaito ? '' : 'user'}`;
+
+  row.innerHTML = `
+    <div class="msg-avatar ${isKaito ? 'kaito' : ''}">
+      ${isKaito ? 'K' : (USER_NAME.slice(0,1) || 'U')}
+    </div>
+    <div class="msg-body">
+      <div class="msg-name">${isKaito ? 'Kaito' : USER_NAME}</div>
+      <div class="bubble ${isKaito ? 'kaito' : 'user'}">${escapeHtml(text)}</div>
+      <div class="msg-time">${t}</div>
+    </div>
+  `;
+  msgs.appendChild(row);
+  scrollToBottom();
+}
+
+function showTyping() {
+  removeTyping();
+  const msgs = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.className = 'msg-row';
+  row.id = 'typing-row';
+  row.innerHTML = `
+    <div class="msg-avatar kaito">K</div>
+    <div class="msg-body">
+      <div class="msg-name">Kaito</div>
+      <div class="typing-indicator">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+    </div>
+  `;
+  msgs.appendChild(row);
+  scrollToBottom();
+}
+
+function removeTyping() {
+  document.getElementById('typing-row')?.remove();
+}
+
+function setStatus(text) {
+  document.getElementById('status-text').textContent = text;
+}
+
+// ── TOAST (proactive notification)
+let toastTimeout = null;
+function showToast(msg) {
+  pendingProactiveMsg = msg;
+  const toast = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg.slice(0, 60) + (msg.length > 60 ? '…' : '');
+  toast.style.display = 'block';
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => { toast.style.display = 'none'; }, 7000);
+}
+
+function handleToastClick() {
+  document.getElementById('toast').style.display = 'none';
+  if (pendingProactiveMsg) {
+    appendMessage('kaito', pendingProactiveMsg);
+    addToMemory('assistant', pendingProactiveMsg);
+    chatHistory.push({ role: 'model', parts: [{ text: pendingProactiveMsg }] });
+    saveMemory();
+    pendingProactiveMsg = null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SEND MESSAGE
+// ═══════════════════════════════════════════════════════════
+async function sendMessage() {
+  const input = document.getElementById('user-input');
+  const text = input.value.trim();
+  if (!text || isTyping) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+
+  appendMessage('user', text);
+  addToMemory('user', text);
+  chatHistory.push({ role: 'user', parts: [{ text }] });
+
+  isTyping = true;
+  document.getElementById('send-btn').disabled = true;
+  setStatus('읽는 중…');
+  setStatus('입력 중…');
+  showTyping();
+
+  try {
+    const reply = await callGemini(text);
+    removeTyping();
+    appendMessage('kaito', reply);
+    sendNotification(reply);
+    addToMemory('assistant', reply);
+    chatHistory.push({ role: 'model', parts: [{ text: reply }] });
+    if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
+    saveMemory();
+  } catch(e) {
+    removeTyping();
+    appendMessage('kaito', `[오류] ${e.message}`);
+  }
+
+  isTyping = false;
+  document.getElementById('send-btn').disabled = false;
+  setStatus('온라인');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════
+function sendNotification(body) {
+  if (!('Notification' in window)) return;
+  if (Notification.permission !== 'granted') return;
+  // Only notify if page is hidden (user not actively looking at chat)
+  const n = new Notification('카이토', {
+    body: body.slice(0, 80),
+    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="%230d0e10"/><text x="32" y="42" text-anchor="middle" font-size="32" fill="%237eb8d4">K</text></svg>',
+    badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="%237eb8d4"/><text x="32" y="42" text-anchor="middle" font-size="32" fill="white">K</text></svg>',
+    tag: 'kaito-msg',
+    renotify: true,
+    vibrate: [200, 100, 200]
+  });
+  n.onclick = () => { window.focus(); n.close(); };
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PROACTIVE MESSAGING
+// ═══════════════════════════════════════════════════════════
+function scheduleProactive() {
+  clearTimeout(proactiveTimer);
+  const delay = PROACTIVE_MIN + Math.random() * (PROACTIVE_MAX - PROACTIVE_MIN);
+  proactiveTimer = setTimeout(sendProactive, delay);
+}
+
+async function sendProactive() {
+  if (isTyping) { scheduleProactive(); return; }
+
+  try {
+    const reply = await callGemini(null, true);
+    if (reply && reply.trim()) {
+      showToast(reply.trim());
+      sendNotification(reply.trim());
+    }
+  } catch(e) {
+    // silently fail
+  }
+  scheduleProactive();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  STARTUP — FIRST MESSAGE
+// ═══════════════════════════════════════════════════════════
+async function sendFirstMessage() {
+  setStatus('입력 중…');
+  showTyping();
+  try {
+    const greeting = await callGemini(
+      `처음 시스템이 켜졌을 때 카이토가 ${USER_NAME}에게 먼저 건네는 핀잔 섞인 짧은 인사. 1~2문장. 반말.`,
+      false
+    );
+    removeTyping();
+    appendMessage('kaito', greeting);
+    addToMemory('assistant', greeting);
+    chatHistory.push({ role: 'model', parts: [{ text: greeting }] });
+    saveMemory();
+  } catch(e) {
+    removeTyping();
+    appendMessage('kaito', '...또 왔냐.');
+  }
+  setStatus('온라인');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SETUP
+// ═══════════════════════════════════════════════════════════
+document.getElementById('start-btn').addEventListener('click', async () => {
+  const key = document.getElementById('api-key-input').value.trim();
+  const name = document.getElementById('user-name-input').value.trim();
+
+  if (!key) {
+    document.getElementById('api-key-input').style.borderColor = 'var(--danger)';
+    return;
+  }
+
+  API_KEY = key;
+  if (name) USER_NAME = name;
+
+  // Persist key & name
+  try { localStorage.setItem('kaito_apikey', key); localStorage.setItem('kaito_username', name || '너'); } catch(e){}
+
+  // Request notification permission
+  if ('Notification' in window && Notification.permission === 'default') {
+    await Notification.requestPermission();
+  }
+
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+
+  loadMemory();
+  renderMemoryPanel();
+
+  // Restore previous messages in view
+  if (chatHistory.length > 0) {
+    const today = new Date().toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric' });
+    const msgs = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = 'date-divider';
+    div.textContent = today;
+    msgs.appendChild(div);
+
+    // Show last few from memory
+    const recent = longTermMemory.slice(-10);
+    recent.forEach(m => {
+      const isK = m.startsWith('[Kaito]');
+      const text = m.replace(/^\[[^\]]+\]:\s*/, '');
+      appendMessage(isK ? 'kaito' : 'user', text);
+    });
+    scrollToBottom();
+  } else {
+    await sendFirstMessage();
+  }
+
+  scheduleProactive();
+});
+
+// ═══════════════════════════════════════════════════════════
+//  EVENT LISTENERS
+// ═══════════════════════════════════════════════════════════
+document.getElementById('send-btn').addEventListener('click', sendMessage);
+
+document.getElementById('user-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+// Auto-resize textarea
+document.getElementById('user-input').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+
+document.getElementById('memory-btn').addEventListener('click', () => {
+  document.getElementById('memory-panel').classList.toggle('open');
+});
+
+document.getElementById('panel-close-btn').addEventListener('click', () => {
+  document.getElementById('memory-panel').classList.remove('open');
+});
+
+document.getElementById('clear-memory-btn').addEventListener('click', () => {
+  if (confirm('장기 기억을 모두 삭제할까요?')) {
+    longTermMemory = [];
+    chatHistory = [];
+    try { localStorage.removeItem(MEMORY_KEY); localStorage.removeItem(HISTORY_KEY); } catch(e){}
+    renderMemoryPanel();
+  }
+});
+
+document.getElementById('reset-btn').addEventListener('click', () => {
+  if (confirm('대화를 초기화할까요? (기억은 유지됩니다)')) {
+    chatHistory = [];
+    document.getElementById('messages').innerHTML = '';
+    saveMemory();
+    sendFirstMessage();
+  }
+});
+
+// ─ Pre-fill saved key/name
+try {
+  const savedKey = localStorage.getItem('kaito_apikey');
+  const savedName = localStorage.getItem('kaito_username');
+  if (savedKey) document.getElementById('api-key-input').value = savedKey;
+  if (savedName && savedName !== '너') document.getElementById('user-name-input').value = savedName;
+} catch(e) {}
+</script>
+
+<script>
+// ── SERVICE WORKER (PWA offline support)
+if ('serviceWorker' in navigator) {
+  const swCode = `
+    const CACHE = 'kaito-v1';
+    self.addEventListener('install', e => {
+      self.skipWaiting();
+    });
+    self.addEventListener('activate', e => {
+      e.waitUntil(clients.claim());
+    });
+    self.addEventListener('fetch', e => {
+      e.respondWith(
+        caches.match(e.request).then(r => r || fetch(e.request).catch(() => new Response('', {status: 503})))
+      );
+    });
+    self.addEventListener('notificationclick', e => {
+      e.notification.close();
+      e.waitUntil(clients.matchAll({type:'window'}).then(list => {
+        if (list.length) return list[0].focus();
+        return clients.openWindow('/');
+      }));
+    });
+  `;
+  const blob = new Blob([swCode], {type: 'application/javascript'});
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl).catch(() => {});
+}
+</script>
+</body>
+</html>
